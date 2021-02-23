@@ -17,6 +17,8 @@
 
 #include "gtest/gtest.h"
 
+#include <limits.h>
+
 #include "red_black_tree.h"
 
 //============================================================================//
@@ -38,7 +40,7 @@ class NonEmptyRedBlack : public ::testing::Test
 {
 protected:
     virtual void SetUp() {
-        int keys[] = { 10, 11, 12, 13, 14, 15, 16, 17, 18, 0, -10000, 10000, 55, -82, 62, 95, 100 };
+        int keys[] = { 10, 11, 12, 13, 14, 15, 16, 17, 18, -10000, 10000, 55, -82, 62, 95, 100 };
 
         for(int i = 0; i < 17; ++i)
             EXPECT_EQ(tree.InsertNode(keys[i]).first, true);
@@ -53,29 +55,74 @@ protected:
     BinaryTree tree;
 };
 
+unsigned blackToRoot(BinaryTree::Node_t * node) {
+    unsigned count = 0;
+    
+    while (node != NULL) {
+        if (node->color == BinaryTree::Color_t::BLACK) {
+            count++;
+        }
+
+        node = node->pParent;
+    }
+
+    return count;
+}
+
+void axiomsTest(BinaryTree *tree) {
+    //1. všechny listy černé
+    std::vector<BinaryTree::Node_t *> leafs;
+    tree->GetLeafNodes(leafs);
+
+    for(unsigned i = 0; i < leafs.size(); i++) {
+        EXPECT_EQ(leafs[i]->color, BinaryTree::Color_t::BLACK);
+    }
+
+    //2. červený uzel pouze černé potomky
+    std::vector<BinaryTree::Node_t *> all;
+    tree->GetAllNodes(all); 
+
+    for(unsigned i = 0; i < all.size(); i++) {
+        if (all[i]->color == BinaryTree::Color_t::RED) {
+            if (all[i]->pRight != NULL) {
+                EXPECT_EQ(all[i]->pRight->color, BinaryTree::Color_t::BLACK);
+            }
+
+            if (all[i]->pLeft != NULL) {
+                EXPECT_EQ(all[i]->pLeft->color, BinaryTree::Color_t::BLACK);
+            }
+        }
+    }
+
+    //3. cesty od listu ke kořeni musím mít vždy stejný počet černých uzlů
+    if ( leafs.size() > 0) {
+        unsigned firstCount = blackToRoot(leafs[0]);
+        for(unsigned i = 1; i < leafs.size(); i++) {
+            EXPECT_EQ(blackToRoot(leafs[i]), firstCount);
+        }
+    }
+
+}
+
 TEST_F(NonEmptyRedBlack, Insert)
 {
-    auto out = tree.InsertNode(-82);
-    EXPECT_EQ(out.first, false);
+    int keys[] = { INT_MAX, INT_MIN, 0, -76, 76, 54545, 456, -451, -18};
+    
+    for(int i = 0; i < 8; ++i) {
+        auto out = tree.InsertNode(keys[i]);
+        EXPECT_EQ(out.first, true);
 
-    //exist?
-    EXPECT_EQ(tree.FindNode(-82) == NULL, false);
-    //value?
-    EXPECT_EQ(tree.FindNode(-82)->key, -82);
-    //return ptr
-    EXPECT_EQ(out.second == NULL, false);
-    EXPECT_EQ(out.second->key, -82);
+        //exist?
+        EXPECT_EQ(tree.FindNode(keys[i]) == NULL, false);
+        //value?
+        EXPECT_EQ(tree.FindNode(keys[i])->key, keys[i]);
+        //return ptr
+        EXPECT_EQ(out.second == NULL, false);
+        EXPECT_EQ(out.second->key, keys[i]);
 
-    out = tree.InsertNode(96);
-    EXPECT_EQ(out.first, true);
+        axiomsTest(&tree);
+    }
 
-    //exist?
-    EXPECT_EQ(tree.FindNode(96) == NULL, false);
-    //value?
-    EXPECT_EQ(tree.FindNode(96)->key, 96);
-    //return ptr
-    EXPECT_EQ(out.second == NULL, false);
-    EXPECT_EQ(out.second->key, 96);
 }
 
 TEST_F(NonEmptyRedBlack, ExistInsert)
@@ -84,48 +131,160 @@ TEST_F(NonEmptyRedBlack, ExistInsert)
     EXPECT_EQ(out.first, false);
     EXPECT_EQ(out.second == NULL, false);
     EXPECT_EQ(out.second->key, 100);
+    axiomsTest(&tree);
 
     out = tree.InsertNode(-82);
     EXPECT_EQ(out.first, false);
     EXPECT_EQ(out.second == NULL, false);
     EXPECT_EQ(out.second->key, -82);
+    axiomsTest(&tree);
 }
 
-TEST_F(NonEmptyRedBlack, Find)
+TEST_F(NonEmptyRedBlack, FindExist)
 {
-    auto out = tree.FindNode(-82);
-    EXPECT_EQ(out == NULL, false);
-    EXPECT_EQ(out->key, -82);
 
-    out = tree.FindNode(82);
-    EXPECT_EQ(out == NULL, true);
+    int keys[] = { INT_MAX, INT_MIN, 0, -76, 76, 54545, 456, -451, -18};
+    
+    for(int i = 0; i < 8; ++i) {
+        tree.InsertNode(keys[i]);
+        auto out = tree.FindNode(keys[i]);
+        
+        EXPECT_EQ(out == NULL, false);
+        EXPECT_EQ(out->key, keys[i]);
 
-    out = tree.FindNode(62);
-    EXPECT_EQ(out == NULL, false);
-    EXPECT_EQ(out->key, 62);
-
-    out = tree.FindNode(-1234);
-    EXPECT_EQ(out == NULL, true);
+        axiomsTest(&tree);
+    }
 }
 
-TEST_F(NonEmptyRedBlack, DeleteNode)
+TEST_F(NonEmptyRedBlack, FindNotExist)
 {
-    auto out = tree.DeleteNode(-82);
-    EXPECT_EQ(out, true);
-    EXPECT_EQ(tree.FindNode(-82) == NULL, true);
 
-    out = tree.DeleteNode(82);
-    EXPECT_EQ(out, false);
-    EXPECT_EQ(tree.FindNode(82) == NULL, true);
+    int keys[] = { INT_MAX, INT_MIN, 0, -76, 76, 54545, 456, -451, -18};
+    
+    for(int i = 0; i < 8; ++i) {
+        auto out = tree.FindNode(keys[i]);
+        EXPECT_EQ(out == NULL, true);
 
-    out = tree.DeleteNode(62);
-    EXPECT_EQ(out, true);
-    EXPECT_EQ(tree.FindNode(62) == NULL, true);
+        axiomsTest(&tree);
+    }
+}
 
-    out = tree.DeleteNode(-1234);
-    EXPECT_EQ(out, false);
-    EXPECT_EQ(tree.FindNode(-1234) == NULL, true);
 
-    /* axioms test */
+TEST_F(NonEmptyRedBlack, DeleteExistNode)
+{
+    int keys[] = { INT_MAX, INT_MIN, 0, -76, 76, 54545, 456, -451, -18};
+    
+    for(int i = 0; i < 8; ++i) {
+        tree.InsertNode(keys[i]);
+        auto out = tree.DeleteNode(keys[i]);
+        
+        EXPECT_EQ(out, true);
+        EXPECT_EQ(tree.FindNode(keys[i]) == NULL, true);
 
+        axiomsTest(&tree);
+    }
+}
+
+TEST_F(NonEmptyRedBlack, DeleteNotExistNode)
+{
+    int keys[] = { INT_MAX, INT_MIN, 0, -76, 76, 54545, 456, -451, -18};
+    
+    for(int i = 0; i < 8; ++i) {
+        auto out = tree.DeleteNode(keys[i]);
+        
+        EXPECT_EQ(out, false);
+        EXPECT_EQ(tree.FindNode(keys[i]) == NULL, true);
+
+        axiomsTest(&tree);
+    }
+}
+
+/** 
+ * empty tree tests
+ */
+
+TEST_F(EmptyRedBlack, Insert)
+{
+    int keys[] = { INT_MAX, INT_MIN, 0, -76, 76, 54545, 456, -451, -18};
+    
+    for(int i = 0; i < 8; ++i) {
+        auto out = tree.InsertNode(keys[i]);
+        EXPECT_EQ(out.first, true);
+
+        //exist?
+        EXPECT_EQ(tree.FindNode(keys[i]) == NULL, false);
+        //value?
+        EXPECT_EQ(tree.FindNode(keys[i])->key, keys[i]);
+        //return ptr
+        EXPECT_EQ(out.second == NULL, false);
+        EXPECT_EQ(out.second->key, keys[i]);
+
+        axiomsTest(&tree);
+
+        //we need empty tree for test
+        tree.DeleteNode(keys[i]);
+    }
+
+}
+
+TEST_F(EmptyRedBlack, FindExist)
+{
+
+    int keys[] = { INT_MAX, INT_MIN, 0, -76, 76, 54545, 456, -451, -18};
+    
+    for(int i = 0; i < 8; ++i) {
+        tree.InsertNode(keys[i]);
+        auto out = tree.FindNode(keys[i]);
+        
+        EXPECT_EQ(out == NULL, false);
+        EXPECT_EQ(out->key, keys[i]);
+
+        axiomsTest(&tree);
+
+        //we need empty tree for test
+        tree.DeleteNode(keys[i]);
+    }
+}
+
+TEST_F(EmptyRedBlack, FindNotExist)
+{
+
+    int keys[] = { INT_MAX, INT_MIN, 0, -76, 76, 54545, 456, -451, -18};
+    
+    for(int i = 0; i < 8; ++i) {
+        auto out = tree.FindNode(keys[i]);
+        EXPECT_EQ(out == NULL, true);
+
+        axiomsTest(&tree);
+    }
+}
+
+
+TEST_F(EmptyRedBlack, DeleteExistNode)
+{
+    int keys[] = { INT_MAX, INT_MIN, 0, -76, 76, 54545, 456, -451, -18};
+    
+    for(int i = 0; i < 8; ++i) {
+        tree.InsertNode(keys[i]);
+        auto out = tree.DeleteNode(keys[i]);
+        
+        EXPECT_EQ(out, true);
+        EXPECT_EQ(tree.FindNode(keys[i]) == NULL, true);
+
+        axiomsTest(&tree);
+    }
+}
+
+TEST_F(EmptyRedBlack, DeleteNotExistNode)
+{
+    int keys[] = { INT_MAX, INT_MIN, 0, -76, 76, 54545, 456, -451, -18};
+    
+    for(int i = 0; i < 8; ++i) {
+        auto out = tree.DeleteNode(keys[i]);
+        
+        EXPECT_EQ(out, false);
+        EXPECT_EQ(tree.FindNode(keys[i]) == NULL, true);
+
+        axiomsTest(&tree);
+    }
 }
