@@ -52,7 +52,7 @@ PriorityQueue::~PriorityQueue()
 void PriorityQueue::Insert(int value)
 {
     auto next = this->GetHead();
-    auto el    = new Element_t;
+    auto el    = new PriorityQueue::Element_t;
 
     el->value = value;
 
