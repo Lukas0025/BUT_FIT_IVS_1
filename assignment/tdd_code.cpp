@@ -34,37 +34,115 @@
 
 PriorityQueue::PriorityQueue()
 {
-
+    this->m_pHead = NULL;
 }
 
 PriorityQueue::~PriorityQueue()
 {
+    //todo remove all elements
+    auto el = this->GetHead();
 
+    while (el != NULL) {
+        auto tmp_next = el->pNext;
+        delete el;
+        el = tmp_next;
+    }
 }
 
 void PriorityQueue::Insert(int value)
 {
+    auto next = this->GetHead();
+    auto el    = new Element_t;
 
+    el->value = value;
+
+    //find correct postion
+    PriorityQueue::Element_t *previous = NULL;
+    while (next  != NULL) {
+        if (next->value <= value) {
+            break;
+        }
+
+        previous = next;
+        next        = next->pNext;
+    }
+
+    //relink
+    if (previous == NULL) {
+        //first element
+
+        el->pNext = NULL;
+        if (next != NULL) {
+            //not empty list
+            el->pNext = next;
+        }
+
+        this->m_pHead = el;
+    } else {
+        el->pNext             = next;
+        previous->pNext = el;
+    }
 }
 
 bool PriorityQueue::Remove(int value)
 {
-    return false;
+    auto to_remove = this->Find(value);
+
+    if (to_remove == NULL) {
+        return false;
+    }
+
+    //re-link
+    if (this->GetHead() == to_remove) {
+        //on top
+        this->m_pHead = to_remove->pNext;
+    } else {
+        //not on top have previous element
+        auto previous = this->GetHead();
+
+        while (previous->pNext != to_remove) {
+            previous = previous->pNext;
+        }
+
+        previous->pNext = to_remove->pNext;
+    }
+
+    //remove element by pointer
+    delete to_remove;
+
+    return true;
 }
 
 PriorityQueue::Element_t *PriorityQueue::Find(int value)
 {
+    auto el = this->GetHead();
+    while (el != NULL) {
+        if (el->value == value) {
+            return el;
+        }
+
+        el = el->pNext;
+    }
+
     return NULL;
 }
 
 size_t PriorityQueue::Length()
 {
-	return 0;
+    unsigned len = 0;
+    auto el = this->GetHead();
+    
+    while (el != NULL) {
+        len++;
+        el = el->pNext;
+    }
+
+    return len;
 }
 
 PriorityQueue::Element_t *PriorityQueue::GetHead()
 {
-    return NULL;
+    return this->m_pHead;
 }
 
 /*** Konec souboru tdd_code.cpp ***/
