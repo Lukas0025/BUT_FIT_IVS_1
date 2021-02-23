@@ -3,12 +3,12 @@
 // Purpose:     Test Driven Development - priority queue code
 //
 // $NoKeywords: $ivs_project_1 $tdd_code.cpp
-// $Author:     JMENO PRIJMENI <xlogin00@stud.fit.vutbr.cz>
+// $Author:     Lukáš Plevač <xpleva07@stud.fit.vutbr.cz>
 // $Date:       $2021-01-04
 //============================================================================//
 /**
  * @file tdd_code.cpp
- * @author JMENO PRIJMENI
+ * @author Lukáš Plevač
  * 
  * @brief Implementace metod tridy prioritni fronty.
  */
