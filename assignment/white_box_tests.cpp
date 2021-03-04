@@ -57,13 +57,11 @@ protected:
     Matrix mat = Matrix(2,2);
 };
 
-class EmptyMatrix  : public ::testing::Test
-{
-protected:
-    Matrix mat;
+class MatrixTest : public ::testing::Test {
+
 };
 
-TEST_F(EmptyMatrix, BadSetup)
+TEST_F(MatrixTest, BadSetup)
 {
     EXPECT_THROW(Matrix(0,1), std::runtime_error);
     EXPECT_THROW(Matrix(1,0), std::runtime_error);
@@ -170,6 +168,29 @@ TEST_F(Matrix2x2, operatorADD)
     EXPECT_EQ((mat + add) == res, true);
 }
 
+TEST_F(Matrix2x2, operatorMUL)
+{
+    //bad size
+    Matrix mat3x3 = Matrix(3,3);
+    EXPECT_THROW(mat * mat3x3, std::runtime_error);
+
+    //correct size
+    double mul_mat[2][3] = {
+        {1,    2, 1},
+        {-10, 4, 0}
+    };
+
+    double res_mat[2][3] = {
+        {30, 12, 10},
+        {-978, 420, 12}
+    };
+
+    auto res = static_array_to_matrix(res_mat);
+    auto mul = static_array_to_matrix(mul_mat);
+
+    EXPECT_EQ((mat * mul) == res, true);
+}
+
 TEST_F(Matrix2x2, operatorMULConst)
 {
     
@@ -181,6 +202,68 @@ TEST_F(Matrix2x2, operatorMULConst)
     auto res = static_array_to_matrix(res_mat);
 
     EXPECT_EQ((mat * 4) == res, true);
+}
+
+TEST_F(Matrix2x2, solveEquation)
+{
+    std::vector< double > b;
+
+    b.push_back(10);
+
+    //bad sizes
+    Matrix mat4x1 = Matrix(4,1);
+    EXPECT_THROW(mat.solveEquation(b), std::runtime_error);
+    EXPECT_THROW(mat4x1.solveEquation(b), std::runtime_error);
+
+    //singular
+    b.push_back(20);
+    double singular_mat[2][2] = {
+        {1, -2},
+        {-2, 4}
+    };
+    auto singular = static_array_to_matrix(singular_mat);
+
+    EXPECT_THROW(singular.solveEquation(b), std::runtime_error);
+
+    //correct
+    std::vector< double > res;
+    res.push_back(1.0157790927);
+    res.push_back(0.07889546351);
+
+
+    EXPECT_NEAR(mat.solveEquation(b) [0] , res[0], 0.0001);
+    EXPECT_NEAR(mat.solveEquation(b) [1] , res[1], 0.0001);
+}
+
+TEST_F(Matrix2x2, det)
+{
+    std::vector< double > b;
+
+    b.push_back(10);
+
+    //bad sizes
+    Matrix mat4x1 = Matrix(4,1);
+    EXPECT_THROW(mat.solveEquation(b), std::runtime_error);
+    EXPECT_THROW(mat4x1.solveEquation(b), std::runtime_error);
+
+    //singular
+    b.push_back(20);
+    double singular_mat[2][2] = {
+        {1, -2},
+        {-2, 4}
+    };
+    auto singular = static_array_to_matrix(singular_mat);
+
+    EXPECT_THROW(singular.solveEquation(b), std::runtime_error);
+
+    //correct
+    std::vector< double > res;
+    res.push_back(1.0157790927);
+    res.push_back(0.07889546351);
+
+
+    EXPECT_NEAR(mat.solveEquation(b) [0] , res[0], 0.0001);
+    EXPECT_NEAR(mat.solveEquation(b) [1] , res[1], 0.0001);
 }
 
 /*** Konec souboru white_box_tests.cpp ***/
