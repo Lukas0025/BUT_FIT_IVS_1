@@ -61,11 +61,16 @@ class MatrixTest : public ::testing::Test {
 
 };
 
-TEST_F(MatrixTest, BadSetup)
+TEST_F(MatrixTest, Setup)
 {
     EXPECT_THROW(Matrix(0,1), std::runtime_error);
     EXPECT_THROW(Matrix(1,0), std::runtime_error);
     EXPECT_THROW(Matrix(-1,0), std::runtime_error);
+    //try setup empy matrix (1x1)
+    auto matrix1 = Matrix();
+
+    //try set
+    EXPECT_EQ(matrix1.set(0, 0, 10), true);
 }
 
 TEST_F(Matrix2x2, SetValue)
@@ -165,7 +170,7 @@ TEST_F(Matrix2x2, operatorADD)
     auto res = static_array_to_matrix(res_mat);
     auto add = static_array_to_matrix(add_mat);
 
-    EXPECT_EQ((mat + add) == res, true);
+    EXPECT_EQ((mat + add), res);
 }
 
 TEST_F(Matrix2x2, operatorMUL)
@@ -188,7 +193,7 @@ TEST_F(Matrix2x2, operatorMUL)
     auto res = static_array_to_matrix(res_mat);
     auto mul = static_array_to_matrix(mul_mat);
 
-    EXPECT_EQ((mat * mul) == res, true);
+    EXPECT_EQ((mat * mul), res);
 }
 
 TEST_F(Matrix2x2, operatorMULConst)
@@ -201,7 +206,7 @@ TEST_F(Matrix2x2, operatorMULConst)
 
     auto res = static_array_to_matrix(res_mat);
 
-    EXPECT_EQ((mat * 4) == res, true);
+    EXPECT_EQ((mat * 4), res);
 }
 
 TEST_F(Matrix2x2, solveEquation)
@@ -235,35 +240,124 @@ TEST_F(Matrix2x2, solveEquation)
     EXPECT_NEAR(mat.solveEquation(b) [1] , res[1], 0.0001);
 }
 
-TEST_F(Matrix2x2, det)
+TEST_F(MatrixTest, detTest)
 {
     std::vector< double > b;
 
-    b.push_back(10);
+    //1x1 size
+    double mat1[1][1] = {
+        {10}
+    };
+    auto mat1x1 = static_array_to_matrix(mat1);
+    b.push_back(1);
 
-    //bad sizes
-    Matrix mat4x1 = Matrix(4,1);
-    EXPECT_THROW(mat.solveEquation(b), std::runtime_error);
-    EXPECT_THROW(mat4x1.solveEquation(b), std::runtime_error);
+    EXPECT_NEAR(mat1x1.solveEquation(b)[0], 0.1, 0.00001);
 
-    //singular
-    b.push_back(20);
+    //2x2 size
+    double mat2[2][2] = {
+        {1, 2},
+        {2, 1}
+    };
+    auto mat2x2 = static_array_to_matrix(mat2);
+    b.push_back(1);
+
+    EXPECT_NEAR(mat2x2.solveEquation(b)[0], (double)1/3, 0.00001);
+
+    //3x3 size
+    double mat3[3][3] = {
+        {1, 2, 3},
+        {3, 2, 1},
+        {2, 3, 1}
+    };
+    auto mat3x3 = static_array_to_matrix(mat3);
+    b.push_back(1);
+
+    EXPECT_NEAR(mat3x3.solveEquation(b)[0], (double)1/6, 0.00001);
+
+    //4x4 size
+    double mat4[4][4] = {
+        {1, 2, 3, 4},
+        {3, 2, 1, 4},
+        {2, 3, 1, 4},
+        {4, 3, 1, 2}
+    };
+    auto mat4x4 = static_array_to_matrix(mat4);
+    b.push_back(1);
+
+    EXPECT_NEAR(mat4x4.solveEquation(b)[0], (double)1/10, 0.00001);
+}
+
+TEST_F(Matrix2x2, transpose)
+{
+    double res_mat[2][2] = {
+        {10, 12},
+        {-2, 99}
+    };
+    auto res = static_array_to_matrix(res_mat);
+
+    EXPECT_EQ(mat.transpose(), res);
+}
+
+TEST_F(MatrixTest, inverse)
+{
+    //small test
+    auto mat1x1 = Matrix(1,1);
+    EXPECT_THROW(mat1x1.inverse(), std::runtime_error);
+
+    //big test
+    auto mat5x5 = Matrix(5,5);
+    EXPECT_THROW(mat5x5.inverse(), std::runtime_error);
+
+    //sinular test
     double singular_mat[2][2] = {
         {1, -2},
         {-2, 4}
     };
     auto singular = static_array_to_matrix(singular_mat);
+    EXPECT_THROW(singular.inverse(), std::runtime_error);
 
-    EXPECT_THROW(singular.solveEquation(b), std::runtime_error);
+    //clac on 2x2
+    double mat1[2][2] = {
+        {1, 2},
+        {-2, 4}
+    };
+    
+    double res1[2][2] = {
+        {0.5, -0.25},
+        {0.25,0.125}
+    };
+    auto mat2x2 = static_array_to_matrix(mat1);
+    auto res2x2 = static_array_to_matrix(res1);
 
-    //correct
-    std::vector< double > res;
-    res.push_back(1.0157790927);
-    res.push_back(0.07889546351);
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 2; j++) {
+            EXPECT_NEAR(mat2x2.inverse().get(i,j) , res2x2.get(i,j), 0.00001);
+        }
+    }
 
 
-    EXPECT_NEAR(mat.solveEquation(b) [0] , res[0], 0.0001);
-    EXPECT_NEAR(mat.solveEquation(b) [1] , res[1], 0.0001);
+    //clac on 3x3
+    double mat2[3][3] = {
+        {1, 2, 3},
+        {-2, 4, 3},
+        {1, 1, 1}
+    };
+    
+    double res2[3][3] = {
+        {-1/7.0,    -1/7.0,   6/7.0},
+        {-5/7.0,     2/7.0,    9/7.0},
+        {6/7.0,     -1/7.0,   -8/7.0}
+    };
+    auto mat3x3 = static_array_to_matrix(mat2);
+    auto res3x3 = static_array_to_matrix(res2);
+
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            EXPECT_NEAR(mat3x3.inverse().get(i,j) , res3x3.get(i,j), 0.00001);
+        }
+    }
+
 }
+
 
 /*** Konec souboru white_box_tests.cpp ***/
