@@ -3,12 +3,12 @@
 // Purpose:     White Box - Tests suite
 //
 // $NoKeywords: $ivs_project_1 $white_box_code.cpp
-// $Author:     JMENO PRIJMENI <xlogin00@stud.fit.vutbr.cz>
+// $Author:     Lukáš Plevač <xpleva07@stud.fit.vutbr.cz>
 // $Date:       $2021-01-04
 //============================================================================//
 /**
  * @file white_box_tests.cpp
- * @author JMENO PRIJMENI
+ * @author Lukáš Plevač
  * 
  * @brief Implementace testu prace s maticemi.
  */
@@ -25,6 +25,11 @@
 //    matic.
 //============================================================================//
 
+/**
+ * Transfer static array to object of Matrix Class
+ * @param value static array to convertion
+ * @return Matrix object with data from value param
+ */
 template <size_t rows, size_t cols>
 Matrix static_array_to_matrix(double (&value)[rows][cols]) {
     Matrix mat = Matrix(rows, cols);
@@ -38,23 +43,85 @@ Matrix static_array_to_matrix(double (&value)[rows][cols]) {
     return mat;
 }
 
+/**
+ * Transfer static array to object of 1D Matrix vector [double]
+ * @param value static array to convertion
+ * @return Double Vector object with data from value param
+ */
+template <size_t cols>
+std::vector< double > static_array_to_1DVector(double (&value)[cols]) {
+    std::vector< double > line;
+
+    for (int j = 0; j < cols; j++) {
+        line.push_back(value[j]);
+    }
+
+    return line;
+}
+
+/**
+ * Transfer static array to object of 2D Matrix vector [double]
+ * @param value static array to convertion
+ * @return Double Vector object with data from value param
+ */
+template <size_t rows, size_t cols>
+std::vector<std::vector< double > > static_array_to_2DVector(double (&value)[rows][cols]) {
+    std::vector<std::vector< double > > vec;
+
+    for (int j = 0; j < rows; j++) {
+        vec.push_back(static_array_to_1DVector(value[j]));
+    }
+
+    return vec;
+}
+
 class Matrix2x2 : public ::testing::Test
 {
 protected:
     virtual void SetUp() {
-        double value[2][2] = { 
+        double array[2][2] = { 
             { 10, -2 },
             { 12, 99 }
         };
 
-        for (int i = 0; i < 2; i++) {
-            for (int j = 0; j < 2; j++) {
-                mat.set(i, j, value[i][j]);
-            }
-        }
+        mat = static_array_to_matrix(array);
     }
 
-    Matrix mat = Matrix(2,2);
+    Matrix mat;
+};
+
+class Matrix5x3 : public ::testing::Test
+{
+protected:
+    virtual void SetUp() {
+        double array[5][3] = {
+            {10.87,   -10.10,    2.70},
+            {100,      -81.63,    10},
+            {5,          -1.333,     99.89},
+            {-42,      -10,           24},
+            {65,       -10,           2}
+        };
+
+        mat = static_array_to_matrix(array);
+    }
+
+    Matrix mat;
+};
+
+class Matrix3x6 : public ::testing::Test
+{
+protected:
+    virtual void SetUp() {
+        double array[3][6] = {
+            {10.1,    -10.8,     2.7,      -100.3,   64.0,    42.7},
+            {100.6,  -81.66,  10.18,   -42.1,    54.54,  30.1},
+            {5.544,  -1.568,  99.99,    10.5,    73.1,    57.3}
+        };
+
+        mat = static_array_to_matrix(array);
+    }
+
+    Matrix mat;
 };
 
 class MatrixTest : public ::testing::Test {
@@ -73,6 +140,10 @@ TEST_F(MatrixTest, Setup)
     EXPECT_EQ(matrix1.set(0, 0, 10), true);
 }
 
+/***
+ * operation set value on all sizes
+ */
+
 TEST_F(Matrix2x2, SetValue)
 {
     EXPECT_EQ(mat.set(0, 0, 10), true);
@@ -85,45 +156,130 @@ TEST_F(Matrix2x2, SetValue)
     EXPECT_EQ(mat.set(3, 3, 10), false);
 }
 
+TEST_F(Matrix5x3, SetValue)
+{
+    EXPECT_EQ(mat.set(4, 2, 10.15), true);
+
+    //check is set
+    EXPECT_DOUBLE_EQ(mat.get(4, 2), 10.15);
+
+    EXPECT_EQ(mat.set(5, 0, 10), false);
+    EXPECT_EQ(mat.set(0, 3, 10), false);
+    EXPECT_EQ(mat.set(-1, 0, 10), false);
+}
+
+TEST_F(Matrix3x6, SetValue)
+{
+    EXPECT_EQ(mat.set(2, 5, 10.15), true);
+
+    //check is set
+    EXPECT_DOUBLE_EQ(mat.get(2, 5), 10.15);
+
+    EXPECT_EQ(mat.set(3, 0, 10), false);
+    EXPECT_EQ(mat.set(0, 6, 10), false);
+    EXPECT_EQ(mat.set(-1, 0, 10), false);
+}
+
+/***
+ * operation set vector on all sizes
+ */
+
+
 TEST_F(Matrix2x2, SetVector)
 {
-    std::vector<std::vector< double > > toset;
-    std::vector< double > line;
+    double vec1x2[1][2] = {
+        {1, 2.2}
+    };
 
-    line.push_back(1);
-    line.push_back(2);
+    EXPECT_EQ(mat.set(static_array_to_2DVector(vec1x2)), false);
 
-    toset.push_back(line);
+    double vec1x4[1][4] = {
+        {1, 2, 5, 6.1}
+    };
 
-    EXPECT_EQ(mat.set(toset), false);
+    EXPECT_EQ(mat.set(static_array_to_2DVector(vec1x4)), false);
 
-    //for same size line 53 but fail on 58
-    toset[0].push_back(3);
-    toset[0].push_back(4);
+    double vec2x2[2][2] = {
+        {1.65, 2},
+        {3,      4.58}
+    };
 
-    EXPECT_EQ(mat.set(toset), false);
-
-    //now pass
-    toset[0].pop_back();
-    toset[0].pop_back();
-
-    line.pop_back();
-    line.pop_back();
-
-    line.push_back(3);
-    line.push_back(4);
-
-    toset.push_back(line);
-
-    EXPECT_EQ(mat.set(toset), true);
+    EXPECT_EQ(mat.set(static_array_to_2DVector(vec2x2)), true);
 
     //check values
     for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 2; j++) {
-            EXPECT_DOUBLE_EQ(mat.get(i, j), toset[i][j]);
+            EXPECT_DOUBLE_EQ(mat.get(i, j), vec2x2[i][j]);
         }
     }
 }
+
+TEST_F(Matrix5x3, SetVector)
+{
+    double vec1x2[1][2] = {
+        {1, 2.5}
+    };
+
+    EXPECT_EQ(mat.set(static_array_to_2DVector(vec1x2)), false);
+
+    double vec1x4[1][4] = {
+        {1, 2.1, 5, 6}
+    };
+
+    EXPECT_EQ(mat.set(static_array_to_2DVector(vec1x4)), false);
+
+    double vec5x3[5][3] = {
+        {1.01, 2,      2.22},
+        {3,      4,      5.658},
+        {1,      2,      10},
+        {3,      4,      199},
+        {1,      2.19, 158.1}
+    };
+
+    EXPECT_EQ(mat.set(static_array_to_2DVector(vec5x3)), true);
+
+    //check values
+    for (int i = 0; i < 5; i++) {
+        for (int j = 0; j < 3; j++) {
+            EXPECT_DOUBLE_EQ(mat.get(i, j), vec5x3[i][j]);
+        }
+    }
+}
+
+TEST_F(Matrix3x6, SetVector)
+{
+    double vec1x2[1][2] = {
+        {1, 2.5}
+    };
+
+    EXPECT_EQ(mat.set(static_array_to_2DVector(vec1x2)), false);
+
+    double vec1x4[1][4] = {
+        {1, 2.1, 5, 6}
+    };
+
+    EXPECT_EQ(mat.set(static_array_to_2DVector(vec1x4)), false);
+
+    double vec3x6[3][6] = {
+        {310.1,    -110.8,     52.7,      -1100.3,   264.0,    342.7},
+        {4100.6,  -581.66,  410.18,   -642.1,    254.54,  530.1},
+        {55.544,  -61.568,  399.99,    110.5,    173.1,    457.3}
+    };
+
+    EXPECT_EQ(mat.set(static_array_to_2DVector(vec3x6)), true);
+
+    //check values
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 6; j++) {
+            EXPECT_DOUBLE_EQ(mat.get(i, j), vec3x6[i][j]);
+        }
+    }
+}
+
+/***
+ * operation getValue on all sizes
+ */
+
 
 TEST_F(Matrix2x2, getValue)
 {
@@ -132,6 +288,27 @@ TEST_F(Matrix2x2, getValue)
     EXPECT_THROW(mat.get(-1, -1), std::runtime_error);
     EXPECT_THROW(mat.get(1, -1), std::runtime_error);
 }
+
+TEST_F(Matrix3x6, getValue)
+{
+    EXPECT_DOUBLE_EQ(mat.get(2, 5),  57.3);
+    EXPECT_THROW(mat.get(3, 1), std::runtime_error);
+    EXPECT_THROW(mat.get(-1, -1), std::runtime_error);
+    EXPECT_THROW(mat.get(1, 6), std::runtime_error);
+}
+
+TEST_F(Matrix5x3, getValue)
+{
+    EXPECT_DOUBLE_EQ(mat.get(4, 2), 2);
+    EXPECT_THROW(mat.get(5, 1), std::runtime_error);
+    EXPECT_THROW(mat.get(-1, -1), std::runtime_error);
+    EXPECT_THROW(mat.get(1, 4), std::runtime_error);
+}
+
+/***
+ * operation EQ on all sizes
+ */
+
 
 TEST_F(Matrix2x2, operatorEQ)
 {
@@ -150,6 +327,50 @@ TEST_F(Matrix2x2, operatorEQ)
     //not same test
     EXPECT_EQ(mat == mat2, false);
 }
+
+TEST_F(Matrix5x3, operatorEQ)
+{
+    Matrix mat3x3 = Matrix(3,3);
+    EXPECT_THROW(mat == mat3x3, std::runtime_error);
+    
+    //same test
+    EXPECT_EQ(mat == mat, true);
+
+    double notsame[5][3] = {
+        {1.01, 2,      2.22},
+        {3,      4,      5.658},
+        {1,      2,      10},
+        {3,      4,      199},
+        {1,      2.19, 158.1}
+    };
+
+    auto mat2 = static_array_to_matrix(notsame);
+    //not same test
+    EXPECT_EQ(mat == mat2, false);
+}
+
+TEST_F(Matrix3x6, operatorEQ)
+{
+    Matrix mat3x3 = Matrix(3,3);
+    EXPECT_THROW(mat == mat3x3, std::runtime_error);
+    
+    //same test
+    EXPECT_EQ(mat == mat, true);
+
+    double notsame[3][6] = {
+        {310.1,    -110.8,     52.7,      -1100.3,   264.0,    342.7},
+        {4100.6,  -581.66,  410.18,   -642.1,    254.54,  530.1},
+        {55.544,  -61.568,  399.99,    110.5,    173.1,    457.3}
+    };
+
+    auto mat2 = static_array_to_matrix(notsame);
+    //not same test
+    EXPECT_EQ(mat == mat2, false);
+}
+
+/***
+ * operation add on all sizes
+ */
 
 TEST_F(Matrix2x2, operatorADD)
 {
@@ -172,6 +393,64 @@ TEST_F(Matrix2x2, operatorADD)
 
     EXPECT_EQ((mat + add), res);
 }
+
+TEST_F(Matrix5x3, operatorADD)
+{
+    Matrix mat3x4 = Matrix(3,4);
+    EXPECT_THROW(mat + mat3x4, std::runtime_error);
+    
+    //same size test
+    double add_mat[5][3] = {
+        {1.01, 2,      2.22},
+        {3,      4,      5.658},
+        {1,      2,      10},
+        {3,      4,      199},
+        {1,      2.19, 158.1}
+    };
+
+    double res_mat[5][3];
+
+    for (int i = 0; i < 5; i++) {
+        for (int j = 0; j < 3; j++) {
+            res_mat[i][j] = mat.get(i, j) + add_mat[i][j];
+        }
+    }
+
+    auto res = static_array_to_matrix(res_mat);
+    auto add = static_array_to_matrix(add_mat);
+
+    EXPECT_EQ((mat + add), res);
+}
+
+TEST_F(Matrix3x6, operatorADD)
+{
+    Matrix mat3x5 = Matrix(3,5);
+    EXPECT_THROW(mat + mat3x5, std::runtime_error);
+    
+    //same size test
+    double add_mat[3][6] = {
+        {310.1,    -110.8,     52.7,      -1100.3,   264.0,    342.7},
+        {4100.6,  -581.66,  410.18,   -642.1,    254.54,  530.1},
+        {55.544,  -61.568,  399.99,    110.5,    173.1,    457.3}
+    };
+
+    double res_mat[3][6];
+
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 6; j++) {
+            res_mat[i][j] = mat.get(i, j) + add_mat[i][j];
+        }
+    }
+
+    auto res = static_array_to_matrix(res_mat);
+    auto add = static_array_to_matrix(add_mat);
+
+    EXPECT_EQ((mat + add), res);
+}
+
+/***
+ * operation mul on all sizes
+ */
 
 TEST_F(Matrix2x2, operatorMUL)
 {
@@ -196,6 +475,69 @@ TEST_F(Matrix2x2, operatorMUL)
     EXPECT_EQ((mat * mul), res);
 }
 
+
+TEST_F(Matrix5x3, operatorMUL)
+{
+    //bad size
+    Matrix mat2x3 = Matrix(2,3);
+    EXPECT_THROW(mat * mat2x3, std::runtime_error);
+
+    //correct size
+    double mul_mat[3][1] = {
+        {3},
+        {2},
+        {1}
+    };
+
+    double res_mat[5][1] = {
+        {15.11},
+        {146.74},
+        {112.224},
+        {-122},
+        {177}
+    };
+
+    auto mul = static_array_to_matrix(mul_mat);
+
+    for (int i = 0; i < 5; i++) {
+        EXPECT_NEAR((mat * mul).get(i, 0), res_mat[i][0], 0.0001);
+    }
+}
+
+
+TEST_F(Matrix3x6, operatorMUL)
+{
+    //bad size
+    Matrix mat3x3 = Matrix(3,3);
+    EXPECT_THROW(mat * mat3x3, std::runtime_error);
+
+    //correct size
+    double mul_mat[6][1] = {
+        {3},
+        {2},
+        {1},
+        {3},
+        {2},
+        {1}
+    };
+
+    double res_mat[3][1] = {
+        {-118.8},
+        {161.54},
+        {348.486}
+    };
+
+    auto mul = static_array_to_matrix(mul_mat);
+
+    for (int i = 0; i < 3; i++) {
+        EXPECT_NEAR((mat * mul).get(i, 0), res_mat[i][0], 0.0001);
+    }
+}
+
+/***
+ * operation mul by costant on all sizes
+ */
+
 TEST_F(Matrix2x2, operatorMULConst)
 {
     
@@ -208,6 +550,41 @@ TEST_F(Matrix2x2, operatorMULConst)
 
     EXPECT_EQ((mat * 4), res);
 }
+
+TEST_F(Matrix5x3, operatorMULConst)
+{
+    
+    double res_mat[5][3];
+
+    for (int i = 0; i < 5; i++) {
+        for (int j = 0; j < 3; j++) {
+            res_mat[i][j] = (mat.get(i,j) * 4);
+        }
+    }
+
+    auto res = static_array_to_matrix(res_mat);
+
+    EXPECT_EQ((mat * 4), res);
+}
+
+TEST_F(Matrix3x6, operatorMULConst)
+{
+    
+    double res_mat[3][6];
+
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 6; j++) {
+            res_mat[i][j] = (mat.get(i,j) * 4);
+        }
+    }
+    auto res = static_array_to_matrix(res_mat);
+
+    EXPECT_EQ((mat * 4), res);
+}
+
+/***
+ * operation solveEquation on all sizes
+ */
 
 TEST_F(Matrix2x2, solveEquation)
 {
@@ -287,6 +664,10 @@ TEST_F(MatrixTest, detTest)
     EXPECT_NEAR(mat4x4.solveEquation(b)[0], (double)1/10, 0.00001);
 }
 
+/***
+ * operation transpose on all sizes
+ */
+
 TEST_F(Matrix2x2, transpose)
 {
     double res_mat[2][2] = {
@@ -297,6 +678,40 @@ TEST_F(Matrix2x2, transpose)
 
     EXPECT_EQ(mat.transpose(), res);
 }
+
+TEST_F(Matrix5x3, transpose)
+{
+    double res_mat[3][5];
+
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 5; j++) {
+            res_mat[i][j] = mat.get(j,i);
+        }
+    }
+
+    auto res = static_array_to_matrix(res_mat);
+
+    EXPECT_EQ(mat.transpose(), res);
+}
+
+TEST_F(Matrix3x6, transpose)
+{
+    double res_mat[6][3];
+
+    for (int i = 0; i < 6; i++) {
+        for (int j = 0; j < 3; j++) {
+            res_mat[i][j] = mat.get(j, i);
+        }
+    }
+
+    auto res = static_array_to_matrix(res_mat);
+
+    EXPECT_EQ(mat.transpose(), res);
+}
+
+/***
+ * operation inverse on all sizes
+ */
 
 TEST_F(MatrixTest, inverse)
 {
