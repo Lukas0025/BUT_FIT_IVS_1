@@ -4,7 +4,7 @@
 //
 // $NoKeywords: $ivs_project_1 $black_box_tests.cpp
 // $Author:     Lukáš Plevač <xpleva07@stud.fit.vutbr.cz>
-// $Date:       $2021-01-04
+// $Date:       $2021-03-10
 //============================================================================//
 /**
  * @file black_box_tests.cpp
